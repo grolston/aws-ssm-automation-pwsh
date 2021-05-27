@@ -37,7 +37,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-  rPwshSsmAutomationv1:
+  rPwshSsmAutomation:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
