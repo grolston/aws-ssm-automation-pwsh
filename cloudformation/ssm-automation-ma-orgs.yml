@@ -72,7 +72,12 @@ Resources:
                 Install-Module AWS.Tools.Organizations -Force
                 Import-Module AWS.Tools.Organizations
                 ## Check if All Features Enabled
-                if($(Get-ORGOrganization).FeatureSet -NE "ALL"){write-error "Org Feature set is not enabled for ALL Features"}
+                if($(Get-ORGOrganization).FeatureSet -NE "ALL"){
+                  write-error "Org Feature set is not enabled for ALL Features"
+                }
+                else {
+                  write-host "AWS Org has ALL feature set enabled."
+                }
                 $payload = $env:InputPayload | ConvertFrom-Json
                 $service = $payload.service
                 $accountId = $payload.accountId
@@ -86,10 +91,12 @@ Resources:
                   'CloudFormation' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.CloudFormation"}
                   Default {write-error "service not specified"}
                 }
+                write-host "Attempting to enable $service with $SP targeting account $accountId"
 
                 ## Check Service Enabled for Orgs
                 if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled for AWS Org access."}
                 else{
+                  write-host "Enabling $service with $SP"
                   Enable-ORGAWSServiceAccess -ServicePrincipal $SP
                 }
                 ## Check if Service Already Delegated
