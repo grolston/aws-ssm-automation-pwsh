@@ -78,7 +78,6 @@ Resources:
               InputPayload:
                 service: "{{Service}}"
                 accountId: "{{AccountId}}"
-                tagValue: "{{TagValue}}"
               Script: |-
                 $ErrorActionPreference = 'Stop'
                 Install-Module AWS.Tools.Organizations -Force
