@@ -88,7 +88,7 @@ Resources:
                 }
 
                 ## Check Service Enabled for Orgs
-                if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled."}
+                if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled for AWS Org access."}
                 else{
                   Enable-ORGAWSServiceAccess -ServicePrincipal $SP
                 }
