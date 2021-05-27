@@ -87,7 +87,7 @@ Resources:
                   Default {write-error "service not specified"}
                 }
 
-                ## Check if Service Access for Orgs is enabled
+                ## Check Service Enabled for Orgs
                 if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled."}
                 else{
                   Enable-ORGAWSServiceAccess -ServicePrincipal $SP
@@ -96,7 +96,7 @@ Resources:
                 foreach($account in $(Get-ORGDelegatedAdministratorList).Id){
                   if($SP -in $(Get-ORGDelegatedServicesForAccountList -AccountId $account).ServicePrincipal){
                     write-host "$service already delegated to $accountId";
-                    exit 1
+                    exit
                   }
                 }
                 Register-ORGDelegatedAdministrator -AccountId $accountId -ServicePrincipal $SP
