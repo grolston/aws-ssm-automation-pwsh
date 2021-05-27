@@ -57,6 +57,12 @@ Resources:
           Service:
             description: "AWS Organization Service"
             type: "String"
+            allowedValues:
+              - "GuardDuty"
+              - "Config"
+              - "SecurityHub"
+              - "IAM Access Analyzer"
+              - "CloudFormation"
           AccountId:
             description: "Enter the AWS Account ID to delegate service to"
             type: "String"
