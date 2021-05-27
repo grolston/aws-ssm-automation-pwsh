@@ -1,0 +1,110 @@
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: MIT-0
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a copy of this
+#  software and associated documentation files (the "Software"), to deal in the Software
+#  without restriction, including without limitation the rights to use, copy, modify,
+#  merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+#  permit persons to whom the Software is furnished to do so.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+#  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+#  PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+#  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+#  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: SMM Automation documents for Management Account Organizations
+Parameters: {}
+
+Resources:
+
+  rSsmAutomationOrgRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "SSM-Automation-Orgs-Role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - ssm.amazonaws.com
+      Path: "/"
+      Policies:
+        - PolicyName: "SSM-Automation-Orgs-Policy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "org:*"
+                Resource: "*"
+
+  rPwshSsmAutomation:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Name: "EntOps-EnableAndDelegateOrgService"
+      Content:
+        description: Enables and delegates AWS Org Service in the Management Account
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt rSsmAutomationOrgRole.Arn
+        parameters:
+          Service:
+            description: "AWS Organization Service"
+            type: "String"
+          AccountId:
+            description: "Enter the AWS Account ID to delegate service to"
+            type: "String"
+          AutomationAssumeRole:
+            default: ""
+            description: "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf."
+            type: "String"
+        mainSteps:
+          - name: ExecuteCode
+            action: 'aws:executeScript'
+            inputs:
+              Runtime: PowerShell Core 6.0
+              InputPayload:
+                service: "{{Service}}"
+                accountId: "{{AccountId}}"
+                tagValue: "{{TagValue}}"
+              Script: |-
+                $ErrorActionPreference = 'Stop'
+                Install-Module AWS.Tools.Organizations -Force
+                Import-Module AWS.Tools.Organizations
+                ## Check if All Features Enabled
+                if($(Get-ORGOrganization).FeatureSet -NE "ALL"){write-error "Org Feature set is not enabled for ALL Features"}
+                $payload = $env:InputPayload | ConvertFrom-Json
+
+                switch ($service)
+                {
+                  'GuardDuty' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.GuardDuty"}
+                  'Config' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.ConfigService"}
+                  'SecurityHub' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.SecurityHub"}
+                  'IAM Access Analyzer' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.IdentityManagement"}
+                  'CloudFormation' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.CloudFormation"}
+                  Default {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.GuardDuty"}
+                }
+
+                ## Check if Service Access for Orgs is enabled
+                if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled..."}
+                else{
+                  Enable-ORGAWSServiceAccess -ServicePrincipal $SP
+                }
+                ## Check if Service Already Delegated
+                foreach($account in $(Get-ORGDelegatedAdministratorList).Id){if($SP -in $(Get-ORGDelegatedServicesForAccountList -AccountId $account).ServicePrincipal){write-host "$service already delegated to $accountId"; exit 1}}
+                Register-ORGDelegatedAdministrator -AccountId $accountId -ServicePrincipal $SP
+
+
+
+
+Outputs:
+  AutomationDocument:
+    Value: !Ref rPwshSsmAutomation
+  SSMAutomationRole:
+    Value: !Ref rSsmAutomationOrgRole
