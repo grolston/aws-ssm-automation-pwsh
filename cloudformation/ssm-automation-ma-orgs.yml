@@ -59,10 +59,6 @@ Resources:
           AccountId:
             description: "Enter the AWS Account ID to delegate service to"
             type: "String"
-          # AutomationAssumeRole:
-          #   default: ""
-          #   description: "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf."
-          #   type: "String"
         mainSteps:
           - name: ExecuteCode
             action: 'aws:executeScript'
