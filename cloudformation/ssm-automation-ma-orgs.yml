@@ -80,6 +80,8 @@ Resources:
                 ## Check if All Features Enabled
                 if($(Get-ORGOrganization).FeatureSet -NE "ALL"){write-error "Org Feature set is not enabled for ALL Features"}
                 $payload = $env:InputPayload | ConvertFrom-Json
+                $service = payload.service
+                $accountId = payload.accountId
 
                 switch ($service)
                 {
@@ -88,16 +90,21 @@ Resources:
                   'SecurityHub' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.SecurityHub"}
                   'IAM Access Analyzer' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.IdentityManagement"}
                   'CloudFormation' {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.CloudFormation"}
-                  Default {$SP = 'guardduty.amazonaws.com'; $AwsModule = "AWS.Tools.GuardDuty"}
+                  Default {write-error "service not specified"}
                 }
 
                 ## Check if Service Access for Orgs is enabled
-                if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled..."}
+                if($SP -in $(Get-ORGAWSServiceAccessForOrganization).ServicePrincipal){write-host "$service already enabled."}
                 else{
                   Enable-ORGAWSServiceAccess -ServicePrincipal $SP
                 }
                 ## Check if Service Already Delegated
-                foreach($account in $(Get-ORGDelegatedAdministratorList).Id){if($SP -in $(Get-ORGDelegatedServicesForAccountList -AccountId $account).ServicePrincipal){write-host "$service already delegated to $accountId"; exit 1}}
+                foreach($account in $(Get-ORGDelegatedAdministratorList).Id){
+                  if($SP -in $(Get-ORGDelegatedServicesForAccountList -AccountId $account).ServicePrincipal){
+                    write-host "$service already delegated to $accountId";
+                    exit 1
+                  }
+                }
                 Register-ORGDelegatedAdministrator -AccountId $accountId -ServicePrincipal $SP
 
 
