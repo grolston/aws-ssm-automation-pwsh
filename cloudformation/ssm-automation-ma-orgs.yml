@@ -34,17 +34,10 @@ Resources:
               Service:
               - ssm.amazonaws.com
       Path: "/"
-      Policies:
-        - PolicyName: "SSM-Automation-Orgs-Policy"
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - "org:*"
-                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
 
-  rPwshSsmAutomation:
+  rPwshSsmAutomationv1:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
@@ -66,10 +59,10 @@ Resources:
           AccountId:
             description: "Enter the AWS Account ID to delegate service to"
             type: "String"
-          AutomationAssumeRole:
-            default: ""
-            description: "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf."
-            type: "String"
+          # AutomationAssumeRole:
+          #   default: ""
+          #   description: "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf."
+          #   type: "String"
         mainSteps:
           - name: ExecuteCode
             action: 'aws:executeScript'
@@ -85,8 +78,8 @@ Resources:
                 ## Check if All Features Enabled
                 if($(Get-ORGOrganization).FeatureSet -NE "ALL"){write-error "Org Feature set is not enabled for ALL Features"}
                 $payload = $env:InputPayload | ConvertFrom-Json
-                $service = payload.service
-                $accountId = payload.accountId
+                $service = $payload.service
+                $accountId = $payload.accountId
 
                 switch ($service)
                 {
@@ -112,11 +105,3 @@ Resources:
                 }
                 Register-ORGDelegatedAdministrator -AccountId $accountId -ServicePrincipal $SP
 
-
-
-
-Outputs:
-  AutomationDocument:
-    Value: !Ref rPwshSsmAutomation
-  SSMAutomationRole:
-    Value: !Ref rSsmAutomationOrgRole
