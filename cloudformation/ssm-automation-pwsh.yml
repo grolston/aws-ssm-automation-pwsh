@@ -91,4 +91,4 @@ Outputs:
   AutomationDocument:
     Value: !Ref rPwshSsmAutomation
   SSMAutomationRole:
-    Value: !Ref CrossRegionSnapshotCopySSMAutomationRole
+    Value: !Ref SSMAutomationRole
