@@ -15,12 +15,12 @@
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 AWSTemplateFormatVersion: 2010-09-09
-Description: Solution that uses SSM Automation to create encrypted snapshots of RDS clusters and then copy those snapshots to a different AWS region for DR purposes.
+Description: Solution that uses SSM Automation to add a tag to an EC2 instance.
 Parameters: {}
 
 Resources:
 
-  CrossRegionSnapshotCopySSMAutomationRole:
+  SSMAutomationRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: "SSM-Automation-Template-Role"
@@ -50,9 +50,9 @@ Resources:
       DocumentType: Automation
       Name: !Sub  "Template-${AWS::Region}"
       Content:
-        description: Template for Running aws execute script
+        description: Template for Running aws execute script that use PowerShell
         schemaVersion: '0.3'
-        assumeRole: !GetAtt CrossRegionSnapshotCopySSMAutomationRole.Arn
+        assumeRole: !GetAtt SSMAutomationRole.Arn
         parameters:
           InstanceId:
             description: "ID of the Instance."
