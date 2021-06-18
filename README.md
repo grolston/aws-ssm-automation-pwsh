@@ -1,6 +1,6 @@
-# SSM Automation Template with PowerShell
+# SSM Automation Document Templates with PowerShell
 
-The following is a basic template for running SSM Automation document that uses PowerShell
+The following are a few basic templates for running SSM Automation Documents that leverage PowerShell.
 
 ## [ssm-automation-pwsh](cloudformation/ssm-automation-pwsh.yml)
 
